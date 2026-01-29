@@ -1,6 +1,6 @@
 {
   "name": "zotero-edtechhub",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "EdTech hub companion plugin for Zotero",
   "scripts": {
     "lint": "eslint . --ext .ts --cache --cache-location .eslintcache/",
@@ -37,7 +37,7 @@
   "xpi": {
     "name": "EdTechHub for Zotero",
     "id": "edtechhub@edtechhub.org",
-    "updateLink": "https://github.com/edtechhub/zotero-edtechhub/releases/download/v{version}/zotero-edtechhub-{version}.xpi",
+    "updateLink": "https://github.com/sickerine/zotero-edtechhub-release-test/releases/download/v{version}/zotero-edtechhub-{version}.xpi",
     "releaseURL": "https://github.com/edtechhub/zotero-edtechhub/releases/download/release/",
     "iconURL": "content/skin/edtechhub.png",
     "bootstrapped": true,

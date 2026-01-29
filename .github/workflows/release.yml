@@ -60,6 +60,11 @@ jobs:
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
+    - name: Sync manifest.json version
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        jq --arg version "$VERSION" '.version = $version' manifest.json > manifest.json.tmp
+        mv manifest.json.tmp manifest.json
     - name: install node dependencies
       run: npm install
     - name: build
@@ -97,7 +102,7 @@ jobs:
         git tag release
         git push origin release
         gh release create release \
-          --title "Latest Release" \
+          --title "release" \
           --notes "Auto-update manifests for v${VERSION}" \
           updates.json update.rdf \
           2>/dev/null || gh release upload release updates.json update.rdf --clobber
