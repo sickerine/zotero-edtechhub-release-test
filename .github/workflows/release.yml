@@ -97,14 +97,25 @@ jobs:
       if: steps.version-check.outputs.version_changed == 'true'
       run: |
         VERSION=$(jq -r '.version' package.json)
-        git tag -d release 2>/dev/null || true
-        git push origin :release 2>/dev/null || true
-        git tag release
-        git push origin release
-        gh release create release \
-          --title "release" \
-          --notes "Auto-update manifests for v${VERSION}" \
-          updates.json update.rdf \
-          2>/dev/null || gh release upload release updates.json update.rdf --clobber
+        # Check if release tag exists
+        if git rev-parse -q --verify "refs/tags/release" >/dev/null; then
+          echo "Release tag exists, updating files only"
+          # Upload/overwrite files in existing release
+          gh release upload release updates.json update.rdf --clobber
+        else
+          echo "Creating release tag for the first time"
+          # Create release tag pointing to first commit (or current if repo is new)
+          FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD | tail -1)
+          if [ -z "$FIRST_COMMIT" ]; then
+            FIRST_COMMIT=$(git rev-parse HEAD)
+          fi
+          git tag release "$FIRST_COMMIT"
+          git push origin release
+          # Create the release with files
+          gh release create release \
+            --title "release" \
+            --notes "Auto-update manifests" \
+            updates.json update.rdf
+        fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
