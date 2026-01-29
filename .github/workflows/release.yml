@@ -64,6 +64,15 @@ jobs:
       run: npm install
     - name: build
       run: npm run build
+    - name: Rename XPI file
+      if: steps.version-check.outputs.version_changed == 'true'
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        # Find the generated XPI file (with build number suffix) and rename it
+        SOURCE_FILE=$(ls xpi/zotero-edtechhub-${VERSION}.*.xpi | head -1)
+        TARGET_FILE="xpi/zotero-edtechhub-${VERSION}.xpi"
+        mv "$SOURCE_FILE" "$TARGET_FILE"
+        echo "Renamed $SOURCE_FILE to $TARGET_FILE"
     - name: Create GitHub Release
       if: steps.version-check.outputs.version_changed == 'true'
       run: |
