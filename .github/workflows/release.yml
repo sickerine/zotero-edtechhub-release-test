@@ -111,10 +111,11 @@ jobs:
           fi
           git tag release "$FIRST_COMMIT"
           git push origin release
-          # Create the release with files
+          # Create the release with files (explicitly not a draft)
           gh release create release \
             --title "release" \
             --notes "Auto-update manifests" \
+            --draft=false \
             updates.json update.rdf
         fi
       env:
