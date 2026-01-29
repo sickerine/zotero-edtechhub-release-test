@@ -68,18 +68,38 @@ jobs:
       if: steps.version-check.outputs.version_changed == 'true'
       run: |
         VERSION=$(jq -r '.version' package.json)
-        # Find the generated XPI file (with build number suffix) and rename it
         SOURCE_FILE=$(ls xpi/zotero-edtechhub-${VERSION}.*.xpi | head -1)
         TARGET_FILE="xpi/zotero-edtechhub-${VERSION}.xpi"
         mv "$SOURCE_FILE" "$TARGET_FILE"
         echo "Renamed $SOURCE_FILE to $TARGET_FILE"
+    - name: Generate update manifests
+      if: steps.version-check.outputs.version_changed == 'true'
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        printf '%s\n' '{' '"addons": {' '"edtechhub@edtechhub.org": {' '"updates": [' '{' '"version": "'"$VERSION"'",' '"update_link": "https://github.com/sickerine/zotero-edtechhub-release-test/releases/download/v'"$VERSION"'/zotero-edtechhub-'"$VERSION"'.xpi",' '"applications": {' '"zotero": {' '"strict_min_version": "7.0",' '"strict_max_version": "8.*"' '}' '}' '}' ']' '}' '}' '}' > updates.json
+        printf '%s\n' '<?xml version="1.0" encoding="utf-8" ?>' '<RDF:RDF xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">' '<RDF:Description about="urn:mozilla:extension:edtechhub@edtechhub.org">' '<em:updates>' '<RDF:Seq>' '<RDF:li>' '<RDF:Description>' '<em:version>'"$VERSION"'</em:version>' '<em:targetApplication>' '<RDF:Description>' '<em:id>zotero@chnm.gmu.edu</em:id>' '<em:minVersion>7.0</em:minVersion>' '<em:maxVersion>8.*</em:maxVersion>' '<em:updateLink>https://github.com/sickerine/zotero-edtechhub-release-test/releases/download/v'"$VERSION"'/zotero-edtechhub-'"$VERSION"'.xpi</em:updateLink>' '</RDF:Description>' '</em:targetApplication>' '</RDF:Description>' '</RDF:li>' '</RDF:Seq>' '</em:updates>' '</RDF:Description>' '</RDF:RDF>' > update.rdf
     - name: Create GitHub Release
       if: steps.version-check.outputs.version_changed == 'true'
       run: |
         VERSION=$(jq -r '.version' package.json)
         gh release create "v${VERSION}" \
-          --title "Release v${VERSION}" \
+          --title "v${VERSION}" \
           --notes "Release v${VERSION}" \
           "xpi/zotero-edtechhub-${VERSION}.xpi"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Update release tag with manifests
+      if: steps.version-check.outputs.version_changed == 'true'
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        git tag -d release 2>/dev/null || true
+        git push origin :release 2>/dev/null || true
+        git tag release
+        git push origin release
+        gh release create release \
+          --title "Latest Release" \
+          --notes "Auto-update manifests for v${VERSION}" \
+          updates.json update.rdf \
+          2>/dev/null || gh release upload release updates.json update.rdf --clobber
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
