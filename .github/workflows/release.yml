@@ -64,8 +64,13 @@ jobs:
       run: npm install
     - name: build
       run: npm run build
-    - name: release
+    - name: Create GitHub Release
       if: steps.version-check.outputs.version_changed == 'true'
-      run: npm run release
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        gh release create "v${VERSION}" \
+          --title "Release v${VERSION}" \
+          --notes "Release v${VERSION}" \
+          "xpi/zotero-edtechhub-${VERSION}.xpi"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
